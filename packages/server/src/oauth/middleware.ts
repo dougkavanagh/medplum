@@ -1,4 +1,4 @@
-import { OperationOutcomeError, createReference, unauthorized } from '@medplum/core';
+import { OperationOutcomeError, ProfileResource, createReference, isString, unauthorized } from '@medplum/core';
 import { ClientApplication, Login, Project, ProjectMembership, Reference } from '@medplum/fhirtypes';
 import { NextFunction, Request, Response } from 'express';
 import { IncomingMessage } from 'http';
@@ -11,6 +11,9 @@ export interface AuthState {
   project: Project;
   membership: ProjectMembership;
   accessToken?: string;
+
+  onBehalfOf?: ProfileResource;
+  onBehalfOfMembership?: ProjectMembership;
 }
 
 export function authenticateRequest(req: Request, res: Response, next: NextFunction): void {
@@ -76,7 +79,21 @@ async function authenticateBasicAuth(req: IncomingMessage, token: string): Promi
     authTime: new Date().toISOString(),
   };
 
-  return { login, project, membership };
+  // TODO: Check for `x-medplum-on-behalf-of` header
+  const onBehalfOfHeader = req.headers['x-medplum-on-behalf-of'];
+  let onBehalfOf: ProfileResource | undefined = undefined;
+  let onBehalfOfMembership: ProjectMembership | undefined = undefined;
+
+  if (onBehalfOfHeader && isString(onBehalfOfHeader)) {
+    if (!membership.admin) {
+      throw new OperationOutcomeError(unauthorized);
+    }
+
+    onBehalfOfMembership = await systemRepo.readResource<ProjectMembership>('ProjectMembership', onBehalfOfHeader);
+    onBehalfOf = await systemRepo.readReference(onBehalfOfMembership.profile as Reference<ProfileResource>);
+  }
+
+  return { login, project, membership, onBehalfOf, onBehalfOfMembership };
 }
 
 export function isExtendedMode(req: Request): boolean {

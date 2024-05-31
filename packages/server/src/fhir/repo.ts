@@ -120,6 +120,12 @@ export interface RepositoryContext {
    */
   author: Reference;
 
+  /**
+   * Optional individual, device, or organization for whom the change was made.
+   * This value will be included in every resource as meta.onBehalfOf.
+   */
+  onBehalfOf?: Reference;
+
   remoteAddress?: string;
 
   /**
