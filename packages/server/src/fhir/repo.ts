@@ -574,8 +574,12 @@ export class Repository extends BaseRepository implements FhirRepository<PoolCli
       versionId: randomUUID(),
       lastUpdated: this.getLastUpdated(existing, resource),
       author: this.getAuthor(resource),
-      onBehalfOf: this.context.onBehalfOf,
     };
+
+    if (this.context.onBehalfOf) {
+      resultMeta.onBehalfOf = this.context.onBehalfOf;
+    }
+
     const result: T = { ...updated, meta: resultMeta };
 
     const project = this.getProjectId(existing, updated);
