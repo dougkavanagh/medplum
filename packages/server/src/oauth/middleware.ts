@@ -1,4 +1,12 @@
-import { OperationOutcomeError, ProfileResource, createReference, isString, unauthorized } from '@medplum/core';
+import {
+  OperationOutcomeError,
+  Operator,
+  ProfileResource,
+  createReference,
+  getReferenceString,
+  isString,
+  unauthorized,
+} from '@medplum/core';
 import { ClientApplication, Login, Project, ProjectMembership, Reference } from '@medplum/fhirtypes';
 import { NextFunction, Request, Response } from 'express';
 import { IncomingMessage } from 'http';
@@ -89,7 +97,21 @@ async function authenticateBasicAuth(req: IncomingMessage, token: string): Promi
       throw new OperationOutcomeError(unauthorized);
     }
 
-    onBehalfOfMembership = await systemRepo.readResource<ProjectMembership>('ProjectMembership', onBehalfOfHeader);
+    if (onBehalfOfHeader.startsWith('ProjectMembership/')) {
+      onBehalfOfMembership = await systemRepo.readReference<ProjectMembership>({ reference: onBehalfOfHeader });
+    } else {
+      onBehalfOfMembership = await systemRepo.searchOne({
+        resourceType: 'ProjectMembership',
+        filters: [
+          { code: 'profile', operator: Operator.EQUALS, value: onBehalfOfHeader },
+          { code: 'project', operator: Operator.EQUALS, value: getReferenceString(project) },
+        ],
+      });
+      if (!onBehalfOfMembership) {
+        return undefined;
+      }
+    }
+
     onBehalfOf = await systemRepo.readReference(onBehalfOfMembership.profile as Reference<ProfileResource>);
   }
 

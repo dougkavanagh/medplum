@@ -569,11 +569,12 @@ export class Repository extends BaseRepository implements FhirRepository<PoolCli
     });
     updated = await replaceConditionalReferences(this, updated);
 
-    const resultMeta = {
+    const resultMeta: Meta = {
       ...updated.meta,
       versionId: randomUUID(),
       lastUpdated: this.getLastUpdated(existing, resource),
       author: this.getAuthor(resource),
+      onBehalfOf: this.context.onBehalfOf,
     };
     const result: T = { ...updated, meta: resultMeta };
 

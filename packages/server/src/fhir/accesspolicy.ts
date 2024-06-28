@@ -1,4 +1,4 @@
-import { ProfileResource, projectAdminResourceTypes, resolveId } from '@medplum/core';
+import { ProfileResource, createReference, projectAdminResourceTypes, resolveId } from '@medplum/core';
 import {
   AccessPolicy,
   AccessPolicyIpAccessRule,
@@ -39,12 +39,13 @@ export async function getRepoForLogin(authState: AuthState, extendedMode?: boole
     projects: allowedProjects,
     author: membership.profile as Reference,
     remoteAddress: login.remoteAddress,
-    superAdmin: project.superAdmin,
-    projectAdmin: membership.admin,
+    superAdmin: project.superAdmin, // TODO: Don't allow superAdmin with onBehalfOf
+    projectAdmin: membership.admin, // TODO: Don't allow projectAdmin with onBehalfOf
     accessPolicy,
     strictMode: project.strictMode,
     extendedMode,
     checkReferencesOnWrite: project.checkReferencesOnWrite,
+    onBehalfOf: authState.onBehalfOf ? createReference(authState.onBehalfOf) : undefined,
   });
 }
 
@@ -54,7 +55,8 @@ export async function getRepoForLogin(authState: AuthState, extendedMode?: boole
  * @returns The finalized access policy.
  */
 export async function getAccessPolicyForLogin(authState: AuthState): Promise<AccessPolicy | undefined> {
-  const { project, login, membership } = authState;
+  const { project, login } = authState;
+  const membership = authState.onBehalfOfMembership ?? authState.membership;
 
   let accessPolicy = await buildAccessPolicy(membership);
 
