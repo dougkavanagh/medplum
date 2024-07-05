@@ -16,7 +16,8 @@
     "lint": "cross-env NODE_OPTIONS='--max-old-space-size=8192' eslint .",
     "prettier": "prettier --write \"**/*.{ts,tsx,cts,mts,js,jsx,cjs,mjs,json}\"",
     "sort-package-json": "sort-package-json package.json \"packages/*/package.json\" \"examples/*/package.json\"",
-    "test": "turbo run test --filter=!@medplum/docs"
+    "test": "turbo run test --filter=!@medplum/docs",
+    "psql": "docker exec -it medplum-postgres-1 psql -U medplum"
   },
   "prettier": {
     "printWidth": 120,
